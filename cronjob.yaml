@@ -1,0 +1,94 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflare-ddns-config
+  namespace: cloudflare-ddns
+data:
+  CF_IPV6_ENABLED: "false"
+  CF_CONFIG: |
+    {
+      "zones": [
+        {
+          "zone_id": "f7f99e4286738fbdf1800b78d6da7afd",
+          "subdomains": [
+            {"name": "argus", "proxied": true},
+            {"name": "*", "proxied": true},
+            {"name": "kube.argus", "proxied": false}
+          ]
+        },
+        {
+          "zone_id": "92dbad05afcc4e04533c79bd2f3ce487",
+          "subdomains": [
+            {"name": "", "proxied": true},
+            {"name": "www", "proxied": true},
+            {"name": "*", "proxied": true}
+          ]
+        },
+        {
+          "zone_id": "975360a20eac38fe2114b604ed6dd254",
+          "subdomains": [
+            {"name": "api", "proxied": true}
+          ]
+        }
+      ]
+    }
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cloudflare-ddns
+  namespace: cloudflare-ddns
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 60
+      template:
+        metadata:
+          labels:
+            app: cloudflare-ddns
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            fsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+          - name: ddns
+            image: oberwager/cloudflare-ddns:latest
+            imagePullPolicy: "Always"
+            env:
+            - name: CF_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflare-ddns
+                  key: CF_API_TOKEN
+            envFrom:
+            - configMapRef:
+                name: cloudflare-ddns-config
+            resources:
+              requests:
+                memory: 8Mi
+                cpu: 10m
+              limits:
+                memory: 16Mi
+                cpu: 50m
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              runAsNonRoot: true
+              runAsUser: 65534
+              runAsGroup: 65534
+              capabilities:
+                drop: [ALL]
+              seccompProfile:
+                type: RuntimeDefault
