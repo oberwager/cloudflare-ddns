@@ -7,6 +7,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  NAMESPACE: ${{ github.event.repository.name }}
 
 jobs:
   build:
@@ -76,7 +77,7 @@ jobs:
 
       - uses: Azure/k8s-create-secret@v4
         with:
-          namespace: hyperion
+          namespace: ${{ env.NAMESPACE }}
           container-registry-url: ghcr.io
           container-registry-username: ${{ github.actor }}
           container-registry-password: ${{ secrets.GITHUB_TOKEN }}
@@ -86,7 +87,7 @@ jobs:
         uses: azure/k8s-deploy@v4
         with:
           action: deploy
-          namespace: hyperion
+          namespace: ${{ env.NAMESPACE }}
           manifests: |
             kubernetes/cronjob.yaml
           imagePullSecrets: ghcr-pat
