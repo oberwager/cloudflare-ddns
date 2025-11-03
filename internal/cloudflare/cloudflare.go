@@ -1,4 +1,4 @@
-package main
+package cloudflare
 
 import (
 	"bytes"
@@ -10,6 +10,9 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+
+	"github.com/oberwager/cloudflare-ddns/internal/config"
+	"github.com/oberwager/cloudflare-ddns/internal/retry"
 )
 
 type Record struct {
@@ -35,7 +38,7 @@ type ListRecordsResponse struct {
 	Errors  []string `json:"errors"`
 }
 
-func processZone(ctx context.Context, token string, zone Zone, ipv4, ipv6 string, defaultTTL, concurrencyLimit int) error {
+func ProcessZone(ctx context.Context, token string, zone config.Zone, ipv4, ipv6 string, defaultTTL, concurrencyLimit int) error {
 	zoneData, err := cfAPI(ctx, "GET", fmt.Sprintf("https://api.cloudflare.com/client/v4/zones/%s", zone.ZoneID), token, nil)
 	if err != nil {
 		return fmt.Errorf("get zone: %w", err)
@@ -62,7 +65,7 @@ func processZone(ctx context.Context, token string, zone Zone, ipv4, ipv6 string
 
 	for _, sub := range zone.Subdomains {
 		wg.Add(1)
-		go func(s Subdomain) {
+		go func(s config.Subdomain) {
 			defer wg.Done()
 
 			sem <- struct{}{}
@@ -165,7 +168,7 @@ func cfAPI(ctx context.Context, method, url, token string, body any) ([]byte, er
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := httpClient.Do(req)
+	resp, err := retry.HTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("execute request: %w", err)
 	}

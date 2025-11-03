@@ -1,4 +1,4 @@
-package main
+package config
 
 import "fmt"
 
@@ -20,7 +20,7 @@ type Config struct {
 	ConcurrencyLimit int    `json:"concurrency_limit,omitempty"`
 }
 
-func validateConfig(cfg *Config) error {
+func Validate(cfg *Config) error {
 	if len(cfg.Zones) == 0 {
 		return fmt.Errorf("no zones configured")
 	}

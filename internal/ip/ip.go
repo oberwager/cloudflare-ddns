@@ -1,4 +1,4 @@
-package main
+package ip
 
 import (
 	"context"
@@ -8,18 +8,20 @@ import (
 	"net"
 	"net/http"
 	"strings"
+
+	"github.com/oberwager/cloudflare-ddns/internal/retry"
 )
 
-func getIPWithRetry(ctx context.Context, url string, isIPv6 bool) (string, error) {
+func GetWithRetry(ctx context.Context, url string, isIPv6 bool) (string, error) {
 	var result string
-	config := DefaultRetryConfig()
+	config := retry.DefaultConfig()
 
 	ipType := "IPv4"
 	if isIPv6 {
 		ipType = "IPv6"
 	}
 
-	err := retryWithBackoff(ctx, fmt.Sprintf("get %s", ipType), config, func() error {
+	err := retry.WithBackoff(ctx, fmt.Sprintf("get %s", ipType), config, func() error {
 		ip, err := getIP(ctx, url)
 		if err != nil {
 			return err
@@ -48,7 +50,7 @@ func getIP(ctx context.Context, url string) (string, error) {
 		return "", fmt.Errorf("create request: %w", err)
 	}
 
-	resp, err := httpClient.Do(req)
+	resp, err := retry.HTTPClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("execute request: %w", err)
 	}

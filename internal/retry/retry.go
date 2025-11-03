@@ -1,4 +1,4 @@
-package main
+package retry
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var httpClient = &http.Client{
+var HTTPClient = &http.Client{
 	Timeout: 30 * time.Second,
 	Transport: &http.Transport{
 		DialContext: (&net.Dialer{
@@ -24,23 +24,23 @@ var httpClient = &http.Client{
 	},
 }
 
-type RetryConfig struct {
+type Config struct {
 	MaxRetries  int
 	InitialWait time.Duration
 	MaxWait     time.Duration
 }
 
-func DefaultRetryConfig() RetryConfig {
-	return RetryConfig{
+func DefaultConfig() Config {
+	return Config{
 		MaxRetries:  5,
 		InitialWait: 1 * time.Second,
 		MaxWait:     32 * time.Second,
 	}
 }
 
-type RetryableFunc func() error
+type Func func() error
 
-func retryWithBackoff(ctx context.Context, operation string, config RetryConfig, fn RetryableFunc) error {
+func WithBackoff(ctx context.Context, operation string, config Config, fn Func) error {
 	var lastErr error
 
 	for attempt := 0; attempt <= config.MaxRetries; attempt++ {

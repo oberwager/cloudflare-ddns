@@ -6,6 +6,10 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+
+	"github.com/oberwager/cloudflare-ddns/internal/cloudflare"
+	"github.com/oberwager/cloudflare-ddns/internal/config"
+	"github.com/oberwager/cloudflare-ddns/internal/ip"
 )
 
 var Version = "dev"
@@ -18,12 +22,12 @@ func main() {
 	configJSON := mustEnv("CF_CONFIG")
 	ipv6Enabled := os.Getenv("CF_IPV6_ENABLED") == "true"
 
-	var cfg Config
+	var cfg config.Config
 	if err := json.Unmarshal([]byte(configJSON), &cfg); err != nil {
 		fatal("parse config", err)
 	}
 
-	if err := validateConfig(&cfg); err != nil {
+	if err := config.Validate(&cfg); err != nil {
 		fatal("invalid config", err)
 	}
 
@@ -37,7 +41,7 @@ func main() {
 
 	ctx := context.Background()
 
-	ipv4, err := getIPWithRetry(ctx, "https://api.ipify.org", false)
+	ipv4, err := ip.GetWithRetry(ctx, "https://api.ipify.org", false)
 	if err != nil {
 		fatal("get IPv4", err)
 	}
@@ -45,7 +49,7 @@ func main() {
 
 	var ipv6 string
 	if ipv6Enabled {
-		if ipv6, err = getIPWithRetry(ctx, "https://api6.ipify.org", true); err != nil {
+		if ipv6, err = ip.GetWithRetry(ctx, "https://api6.ipify.org", true); err != nil {
 			slog.Warn("ipv6 detection failed after retries", "error", err)
 		} else {
 			slog.Info("detected public ip", "type", "ipv6", "ip", ipv6)
@@ -55,9 +59,9 @@ func main() {
 	var wg sync.WaitGroup
 	for _, zone := range cfg.Zones {
 		wg.Add(1)
-		go func(z Zone) {
+		go func(z config.Zone) {
 			defer wg.Done()
-			if err := processZone(ctx, token, z, ipv4, ipv6, cfg.DefaultTTL, cfg.ConcurrencyLimit); err != nil {
+			if err := cloudflare.ProcessZone(ctx, token, z, ipv4, ipv6, cfg.DefaultTTL, cfg.ConcurrencyLimit); err != nil {
 				slog.Error("failed to process zone", "zone_id", z.ZoneID, "error", err)
 			}
 		}(zone)
