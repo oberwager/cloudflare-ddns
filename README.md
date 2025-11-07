@@ -4,7 +4,8 @@
 
 [![Publish Status](https://github.com/oberwager/cloudflare-ddns/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/oberwager/cloudflare-ddns/actions/workflows/docker-publish.yml)
 [![Build Status](https://github.com/oberwager/cloudflare-ddns/actions/workflows/build.yml/badge.svg)](https://github.com/oberwager/cloudflare-ddns/actions/workflows/build.yml)
-[![License](https://img.shields.io/badge/License-MIT-orange.svg)](https://github.com/oberwager/cloudflare-ddns/blob/master/LICENSE)
+[![Image Size](https://ghcr-badge.egpl.dev/oberwager/cloudflare-ddns/size)](https://github.com/oberwager/cloudflare-ddns/pkgs/container/cloudflare-ddns)
+[![License](https://img.shields.io/badge/License-MIT-orange.svg)](https://github.com/oberwager/cloudflare-ddns/blob/main/LICENSE)
 [![Coverage Status](https://coveralls.io/repos/github/oberwager/cloudflare-ddns/badge.svg?branch=main)](https://coveralls.io/github/oberwager/cloudflare-ddns?branch=main)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-yellow?style=flat-square&logo=buy-me-a-coffee&logoColor=white)](https://www.buymeacoffee.com/lucasobe)
 </div>
@@ -34,7 +35,7 @@ This is a complete rewrite with several improvements over the [original implemen
 - Concurrent zone processing
 - Semaphore-based concurrency for subdomain updates
 - 5-10x faster for configs with many zones and subdomains
-- Binary size reduced from 51MB to 6MB
+- Binary size reduced from 51MB to <3MB
 - Cronjob optimized for short-lived runs, minimizing resource usage
 
 **Security**
